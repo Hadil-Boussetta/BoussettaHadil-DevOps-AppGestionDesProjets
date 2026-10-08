@@ -18,5 +18,14 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker build and push') {
+            steps {
+                dir('backend') {
+                    sh 'docker build -t hadoull/devops-appgestiondesprojets-backend:1.0 .'
+                    sh 'docker push hadoull/devops-appgestiondesprojets-backend:1.0'
+                }
+            }
+        }
     }
 }
