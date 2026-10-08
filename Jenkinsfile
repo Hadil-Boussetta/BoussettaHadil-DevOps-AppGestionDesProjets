@@ -22,8 +22,16 @@ pipeline {
         stage('Docker build and push') {
             steps {
                 dir('backend') {
-                    sh 'docker build -t hadoull/devops-appgestiondesprojets-backend:1.0 .'
-                    sh 'docker push hadoull/devops-appgestiondesprojets-backend:1.0'
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-hadil',
+                        usernameVariable: 'hadoull',
+                        passwordVariable: 'Baba220701//'
+                    )]) {
+
+                        sh 'echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin'
+                        sh 'docker build -t hadoull/devops-appgestiondesprojets-backend:1.0 .'
+                        sh 'docker push hadoull/devops-appgestiondesprojets-backend:1.0'
+                    }
                 }
             }
         }
