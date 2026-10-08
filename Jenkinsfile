@@ -1,10 +1,8 @@
-pipeline {
 
+pipeline {
     agent any
 
     stages {
-
-        // Stage 1 : récupérer le projet depuis GitHub
         stage('Checkout main') {
             steps {
                 git branch: 'main',
@@ -12,7 +10,6 @@ pipeline {
             }
         }
 
-        // Stage 2 : compiler le backend et générer le fichier JAR
         stage('Maven compile') {
             steps {
                 dir('backend') {
@@ -21,27 +18,37 @@ pipeline {
             }
         }
 
-        // Stage 3 : construire et publier l'image Docker
-        stage('Docker build and push') {
+        stage('Build and Push Docker Images') {
             steps {
-                dir('backend') {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-hadil',
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-hadil',
+                    usernameVariable: 'DOCKER_USERNAME',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login \
+                            -u "$DOCKER_USERNAME" --password-stdin
 
-                        // Connexion à Docker Hub
-                        sh 'echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin'
+                        docker build -t hadoull/devops-appgestiondesprojets-backend:1.0 ./backend
+                        docker push hadoull/devops-appgestiondesprojets-backend:1.0
 
-                        // Construction de l'image Docker
-                        sh 'docker build -t hadoull/devops-appgestiondesprojets-backend:1.0 .'
+                        docker build -t hadoull/devops-appgestiondesprojets-frontend:1.0 ./frontend
+                        docker push hadoull/devops-appgestiondesprojets-frontend:1.0
 
-                        // Publication de l'image sur Docker Hub
-                        sh 'docker push hadoull/devops-appgestiondesprojets-backend:1.0'
-                    }
+                        docker build -t hadoull/devops-appgestiondesprojets-db:1.0 ./database
+                        docker push hadoull/devops-appgestiondesprojets-db:1.0
+                    '''
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build succeeded: the three Docker images were published.'
+        }
+        failure {
+            echo 'Build failed. Check the Jenkins console output.'
         }
     }
 }
