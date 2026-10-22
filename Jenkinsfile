@@ -18,6 +18,16 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    dir('backend') {
+                        sh './mvnw org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=DevOps-AppGestionDesProjets'
+                    }
+                }
+            }
+        }
+
         stage('Build and Push Docker Images') {
             steps {
                 withCredentials([usernamePassword(
@@ -45,10 +55,11 @@ pipeline {
 
     post {
         success {
-            echo 'Build succeeded: the three Docker images were published.'
+            echo 'Build succeeded: SonarQube analysis completed and Docker images were published.'
         }
         failure {
             echo 'Build failed. Check the Jenkins console output.'
         }
     }
 }
+
